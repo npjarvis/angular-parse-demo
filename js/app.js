@@ -22,4 +22,53 @@ angular.module('ToDoApp', [])
         //HTTP request we make in this application
         $httpProvider.defaults.headers.common['X-Parse-Application-Id'] = '3FR9LArrSkDlsjjeoXuvwjrQ4K0DVUuNufkskKpq';
         $httpProvider.defaults.headers.common['X-Parse-REST-API-Key'] = 'iMgJTiZJJ8B6OIJuDBYQNEbVs3fap5bA9gcPEDdj';
+    })
+    .controller('TasksController', function($scope, $http) {
+        // in-line anonymous function
+        $scope.refreshTasks = function() {
+            $scope.loading = true;
+            // add a query string
+            $http.get(tasksUrl + '?where={"done":false}')
+                //resulting object call success handler
+                .success(function(data) {
+                    $scope.tasks = data.results;
+                })
+                .error(function(err) {
+                    $scope.errorMessage = err;
+                })
+                .finally(function () {
+                  $scope.loading = false;
+                });
+        };
+
+        $scope.refreshTasks();
+
+        $scope.newTask = {done: false};
+
+        $scope.addTask = function() {
+            // need to send new task to parse to save it in a database using .post
+
+            $http.post(tasksUrl, $scope.newTask)
+                .success(function(responseData) {
+                    $scope.newTask.objectId = responseData.objectId;
+                    $scope.tasks.push($scope.newTask);
+                    $scope.newTask = {done: false};
+                })
+                .error(function(err) {
+                    $scope.errorMessage = err;
+                });
+        };
+        //need to send the update up to parse
+        $scope.updateTask = function(task) {
+            $http.put(tasksUrl + '/' + task.objectId, task)
+                .success(function() {
+                    // don't need to do anything here
+                    //we might want to show feedback that update was successful
+
+                })
+                .error(function(err) {
+                    $scope.errorMessage = err
+                });
+        };
+
     });
