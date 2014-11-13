@@ -12,7 +12,8 @@
 //sending a DELETE to this URL + '/' + task.objectId will delete an existing task
 var tasksUrl = 'https://api.parse.com/1/classes/tasks';
 
-angular.module('ToDoApp', [])
+// what goes in the array is an array of other angular modules
+angular.module('ToDoApp', ['ui.bootstrap'])
     .config(function($httpProvider) {
         //Parse required two extra headers sent with every HTTP request: X-Parse-Application-Id, X-Parse-REST-API-Key
         //the first needs to be set to your application's ID value
@@ -28,6 +29,7 @@ angular.module('ToDoApp', [])
         $scope.refreshTasks = function() {
             $scope.loading = true;
             // add a query string
+            // adds a where clause like from SQL, want data only when the 'done' box is not checked
             $http.get(tasksUrl + '?where={"done":false}')
                 //resulting object call success handler
                 .success(function(data) {
@@ -46,7 +48,7 @@ angular.module('ToDoApp', [])
         $scope.newTask = {done: false};
 
         $scope.addTask = function() {
-            // need to send new task to parse to save it in a database using .post
+            // need to send new task to parse to save it in a database using .post()
 
             $http.post(tasksUrl, $scope.newTask)
                 .success(function(responseData) {
@@ -58,17 +60,39 @@ angular.module('ToDoApp', [])
                     $scope.errorMessage = err;
                 });
         };
-        //need to send the update up to parse
+        //need to send the update up to parse using .put()
         $scope.updateTask = function(task) {
             $http.put(tasksUrl + '/' + task.objectId, task)
-                .success(function() {
+                .success(function(responseData) {
                     // don't need to do anything here
                     //we might want to show feedback that update was successful
 
                 })
                 .error(function(err) {
                     $scope.errorMessage = err
+                })
+                .finally(function() {
+                   $scope.updating = false;
                 });
         };
+
+        $scope.incrementVotes = function(task, amount) {
+            var postData = {
+              votes: {
+                  __op: "Increment",
+                  amount: amount
+              }
+            };
+            $http.put(tasksUrl + '/' + task.objectId, postData)
+                .success(function(respData) {
+                    task.votes = respData.votes;
+                 })
+                .error(function(err) {
+                    console.log(err);
+                })
+                .finally (function() {
+                    $scope.updating = false;
+                });
+        }
 
     });
